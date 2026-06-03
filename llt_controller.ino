@@ -1,5 +1,5 @@
 // Pin assignments
-#define LASER_PIN 10
+#define LASER_PIN 11
 
 uint32_t flashingRate = 1; // Flashing rate in Hz
 uint32_t dutyCycle = 50; // Duty cycle in percent
