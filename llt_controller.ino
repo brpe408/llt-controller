@@ -1,59 +1,38 @@
-int LASER_PIN = 11;          // confirmed pin
+// Pin assignments
+#define LASER_PIN 10
 
-float freqHz    = 0.5;       // 0.5Hz default
-float dutyCycle = 50.0;      // 50% default
+uint32_t flashingRate = 1; // Flashing rate in Hz
+uint32_t dutyCycle = 50; // Duty cycle in percent
 
 void setup() {
-  Serial.begin(9600);
+  // put your setup code here, to run once:
   pinMode(LASER_PIN, OUTPUT);
-  printStatus();
+
+  Serial.begin(9600);
 }
 
 void loop() {
-  unsigned long periodMs = (1.0 / freqHz) * 1000;
-  unsigned long onTime   = (dutyCycle / 100.0) * periodMs;
-  unsigned long offTime  = periodMs - onTime;
+  // put your main code here, to run repeatedly:
+  digitalWrite(LASER_PIN, 1);
+  delay(500.0f/flashingRate * dutyCycle/50.0f);
+  digitalWrite(LASER_PIN, 0);
+  delay(500.0f/flashingRate * (100.0f - dutyCycle)/50.0f);
 
-  digitalWrite(LASER_PIN, HIGH);
-  delay(onTime);
-  digitalWrite(LASER_PIN, LOW);
-  delay(offTime);
+  if(Serial.available()) { // Read values from serial if entered
+    String input = Serial.readStringUntil('\n');
+    input.trim();
 
-  if (Serial.available()) {
-    handleCommand();
+    int hzEndIndex = input.indexOf(',', 0);
+    String flashingRateStr = input.substring(0, hzEndIndex); // Read flashing rate from first value
+    String dutyCycleStr = input.substring(hzEndIndex + 1, input.length()); // Read duty cycle from rest
+
+    flashingRate = flashingRateStr.toInt();
+    dutyCycle = dutyCycleStr.toInt();
+
+    Serial.print("Laser set to ");
+    Serial.print(flashingRate);
+    Serial.print(" Hz and ");
+    Serial.print(dutyCycle);
+    Serial.println("% duty cycle.");
   }
-}
-
-void handleCommand() {
-  String cmd = Serial.readStringUntil('\n');
-  cmd.trim();
-
-  if (cmd == "load default") {
-    freqHz    = 0.5;
-    dutyCycle = 50.0;
-    LASER_PIN = 10;
-    Serial.println(">> Defaults loaded.");
-
-  } else if (cmd.startsWith("hz ")) {
-    freqHz = cmd.substring(3).toFloat();
-    Serial.print(">> Frequency set to: "); Serial.print(freqHz); Serial.println("Hz");
-
-  } else if (cmd.startsWith("duty ")) {
-    dutyCycle = cmd.substring(5).toFloat();
-    Serial.print(">> Duty cycle set to: "); Serial.print(dutyCycle); Serial.println("%");
-
-  } else {
-    Serial.println(">> Unknown command");
-  }
-
-  printStatus();
-}
-
-void printStatus() {
-  Serial.println("---------------------------");
-  Serial.print("Pin: ");        Serial.println(LASER_PIN);
-  Serial.print("Frequency: ");  Serial.print(freqHz); Serial.println("Hz");
-  Serial.print("Period: ");     Serial.print(1.0/freqHz); Serial.println("s");
-  Serial.print("Duty Cycle: "); Serial.print(dutyCycle); Serial.println("%");
-  Serial.println("---------------------------");
 }
